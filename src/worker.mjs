@@ -1,4 +1,4 @@
-import {transition,copy} from './flow.mjs';
+import {transition,copy,keyboardFor} from './flow.mjs';
 const json=(v,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const q=(env,sql,...args)=>env.DB.prepare(sql).bind(...args);
 async function authorized(req,env) {
@@ -8,7 +8,7 @@ async function authorized(req,env) {
  const a=await hash(given), b=await hash(`Bearer ${env.ADMIN_TOKEN}`);
  return a.reduce((d,v,i)=>d|(v^b[i]),0)===0;
 }
-async function slots(env){return (await q(env,"SELECT s.*,s.capacity-COUNT(b.lead_id) AS available FROM slots s LEFT JOIN bookings b ON b.slot_id=s.id WHERE s.active=1 AND s.starts_at>? GROUP BY s.id HAVING available>0 ORDER BY s.starts_at LIMIT 20",new Date().toISOString()).all()).results;}
+async function slots(env){return (await q(env,"SELECT s.*,s.capacity-COUNT(b.lead_id) AS available FROM slots s LEFT JOIN bookings b ON b.slot_id=s.id WHERE s.active=1 AND s.starts_at>? AND (?=1 OR (s.label NOT LIKE 'TEST%' AND s.id NOT LIKE 'demo-%')) GROUP BY s.id HAVING available>0 ORDER BY s.starts_at LIMIT 20",new Date().toISOString(),env.DEMO_MODE==='true'?1:0).all()).results;}
 async function event(env,agent,action,outcome){await q(env,'INSERT INTO events(agent,action,outcome) VALUES(?,?,?)',agent,action,outcome).run();}
 async function faq(env,text,language){
  if(env.AI_ENABLED!=='true'||!env.AI) return copy[language].fallback;
@@ -25,6 +25,10 @@ async function faq(env,text,language){
  if(!visible||visible.includes('<think>'))throw Error('unfinished_ai_answer');
  await event(env,'faq','answer','ok'); return visible.slice(0,2000);
  } catch {await event(env,'faq','answer','fallback');return copy[language].fallback;}
+}
+async function runAnalytics(env){
+ const stats=await q(env,"SELECT COUNT(*) AS leads,SUM(interested=1) AS interested,SUM(status='awaiting_assignment') AS waiting,SUM(status='booked') AS booked FROM leads WHERE (?=1 OR (id NOT LIKE 'demo:%' AND COALESCE(parent,'') NOT LIKE 'TEST%'))",env.DEMO_MODE==='true'?1:0).first();
+ await event(env,'analytics','refresh',JSON.stringify(stats));return stats;
 }
 async function handle(env,update,{demo=false}={}) {
  const m=update.message;
@@ -45,8 +49,15 @@ async function handle(env,update,{demo=false}={}) {
  }
  const reply=(env.DEMO_MODE==='true'?'[TEST] ':'')+result.reply;
  // Replies are committed together with the state; Telegram failures remain retryable.
- commands.push(q(env,'INSERT INTO outbox(update_id,chat_id,payload,sent_at) VALUES(?,?,?,?)',update.update_id,id,JSON.stringify({chat_id:m.chat.id,text:reply}),demo?new Date().toISOString():null));
+ commands.push(q(env,'INSERT INTO outbox(update_id,chat_id,payload,sent_at) VALUES(?,?,?,?)',update.update_id,id,JSON.stringify({chat_id:m.chat.id,text:reply,reply_markup:keyboardFor(result.remove?{language:lead.language,step:'consent'}:{...lead,...result.patch})}),demo?new Date().toISOString():null));
  commands.push(q(env,'INSERT INTO events(agent,action,outcome) VALUES(?,?,?)','intake',result.remove?'delete':'message','ok'));
+ if(!demo&&result.patch?.status==='awaiting_assignment'&&/^\d+$/.test(env.ADMIN_CHAT_ID||'')){
+ const next={...lead,...result.patch};
+ const notice='🔔 Для тренера · новая заявка\n\nРодитель: '+next.parent+'\nВозраст ребёнка: '+next.age+'\nКонтакт: '+next.contact+'\nПожелания: '+(next.preferred_times||'не указаны')+'\n\nОжидает распределения по времени.';
+ commands.push(q(env,'INSERT INTO outbox(update_id,chat_id,payload,sent_at) VALUES(NULL,?,?,NULL)',id,JSON.stringify({chat_id:Number(env.ADMIN_CHAT_ID),text:notice,_agent:'notifications'})));
+ commands.push(q(env,"INSERT INTO events(agent,action,outcome) VALUES('notifications','queued','ok')"));
+ }
+
  try {await env.DB.batch(commands);}catch(e){
  if(await q(env,'SELECT id FROM updates WHERE id=?',update.update_id).first())return {duplicate:true};
  throw e;
@@ -59,9 +70,11 @@ async function flush(env){
  for(const row of rows){
  await q(env,'UPDATE outbox SET attempts=attempts+1 WHERE id=?',row.id).run();
  try{
- const r=await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:row.payload,signal:AbortSignal.timeout(10000)});
+ const {_agent,...payload}=JSON.parse(row.payload);
+ const r=await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(10000)});
  const data=await r.json(); if(!r.ok||!data.ok)throw Error('send_failed');
  await q(env,'UPDATE outbox SET sent_at=?,payload=? WHERE id=?',new Date().toISOString(),'{}',row.id).run();
+ if(_agent)await event(env,_agent,'delivered','ok');
  }catch{await event(env,'telegram','delivery','retry');}
  }
 }
@@ -78,13 +91,17 @@ export default {
  }
  if(path.startsWith('/api/')){
  if(!await authorized(req,env))return json({error:'unauthorized'},401);
+ if(path==='/api/agents/run'&&req.method==='POST'){
+ const body=await req.json();if(body.agent!=='analytics')return json({error:'unknown_agent'},400);return json({ok:true,stats:await runAnalytics(env)});
+ }
  if(path==='/api/state'&&req.method==='GET'){
 
- const leads=(await q(env,'SELECT l.*,b.slot_id FROM leads l LEFT JOIN bookings b ON b.lead_id=l.id ORDER BY l.created_at DESC LIMIT 200').all()).results;
+
+ const leads=(await q(env,"SELECT l.*,b.slot_id FROM leads l LEFT JOIN bookings b ON b.lead_id=l.id WHERE (?=1 OR (l.id NOT LIKE 'demo:%' AND COALESCE(l.parent,'') NOT LIKE 'TEST%')) ORDER BY l.created_at DESC LIMIT 200",env.DEMO_MODE==='true'||url.searchParams.get('include_test')==='1'?1:0).all()).results;
  const events=(await q(env,'SELECT * FROM events ORDER BY id DESC LIMIT 50').all()).results;
- const stats=await q(env,"SELECT COUNT(*) AS leads,SUM(status='awaiting_assignment') AS qualified,SUM(interested=1) AS interested,SUM(status='booked') AS booked FROM leads").first();
+ const stats=await q(env,"SELECT COUNT(*) AS leads,SUM(status='awaiting_assignment') AS qualified,SUM(interested=1) AS interested,SUM(status='booked') AS booked FROM leads WHERE (?=1 OR (id NOT LIKE 'demo:%' AND COALESCE(parent,'') NOT LIKE 'TEST%'))",env.DEMO_MODE==='true'?1:0).first();
  const queue=await q(env,'SELECT COUNT(*) AS pending,SUM(attempts>=8) AS failed FROM outbox WHERE sent_at IS NULL').first();
- return json({leads,events,stats,queue,slots:await slots(env),mode:env.DEMO_MODE,telegramConfigured:!!env.TELEGRAM_BOT_TOKEN,ai:env.AI_ENABLED==='true'?'enabled':'disabled'});
+ return json({leads,events,stats,queue,slots:await slots(env),mode:env.DEMO_MODE,telegramConfigured:!!env.TELEGRAM_BOT_TOKEN,notificationsEnabled:!!env.ADMIN_CHAT_ID,ai:env.AI_ENABLED==='true'?'enabled':'disabled'});
  }
  if(path==='/api/demo'&&req.method==='POST'){
  if(env.DEMO_MODE!=='true')return json({error:'disabled'},403);
@@ -99,7 +116,7 @@ export default {
  if(!lead||lead.interested!==1||lead.status!=='awaiting_assignment'||!slot)return json({error:'lead_or_slot_unavailable'},409);
  if(env.DEMO_MODE==='true'&&!lead.id.startsWith('demo:')&&lead.id!==env.TEST_CHAT_ID)return json({error:'test_only'},403);
  const when=new Intl.DateTimeFormat(lead.language==='uk'?'uk-UA':'ru-RU',{timeZone:'Europe/Tallinn',dateStyle:'medium',timeStyle:'short'}).format(new Date(slot.starts_at));
- const message=(env.DEMO_MODE==='true'?'[TEST] ':'')+(lead.language==='uk'?'Тренер призначив час пробного тренування: ':'Тренер назначил время пробной тренировки: ')+when+' (Tallinn). Karate klub Budo, Keldrimäe tn 9. '+(lead.language==='uk'?'Перші 2 тренування безкоштовні. Якщо час не підходить, напишіть тренеру.':'Первые 2 тренировки бесплатно. Если время не подходит, напишите тренеру.');
+ const message=(env.DEMO_MODE==='true'?'[TEST] ':'')+(lead.language==='uk'?'Тренер призначив час пробного тренування: ':'Тренер назначил время пробной тренировки: ')+when+' (Tallinn). Karate klub Budo, Keldrimäe tn 9. '+(lead.language==='uk'?'Перші 2 тренування безкоштовні. Якщо час не підходить, напишіть тренеру: @Alex_monte999, +372 5817 4946.':'Первые 2 тренировки бесплатно. Если время не подходит, напишите тренеру: @Alex_monte999, +372 5817 4946.');
  try{await env.DB.batch([
  q(env,'INSERT INTO bookings(lead_id,slot_id) VALUES(?,?)',lead.id,slot.id),
  q(env,"UPDATE leads SET status='booked' WHERE id=?",lead.id),
@@ -119,5 +136,5 @@ export default {
  const r=await env.ASSETS.fetch(req);const h=new Headers(r.headers);h.set('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");h.set('Referrer-Policy','no-referrer');h.set('X-Content-Type-Options','nosniff');return new Response(r.body,{status:r.status,headers:h});
  }catch{return json({error:'request_failed'},500);}
  },
- async scheduled(_,env){await flush(env);await env.DB.batch([q(env,"DELETE FROM outbox WHERE sent_at IS NOT NULL AND sent_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-7 day')"),q(env,"DELETE FROM updates WHERE created_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-7 day') AND id NOT IN(SELECT update_id FROM outbox)"),q(env,"DELETE FROM events WHERE created_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-30 day')")]);}
+ async scheduled(_,env){await flush(env);await runAnalytics(env);await env.DB.batch([q(env,"DELETE FROM outbox WHERE sent_at IS NOT NULL AND sent_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-7 day')"),q(env,"DELETE FROM updates WHERE created_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-7 day') AND id NOT IN(SELECT update_id FROM outbox)"),q(env,"DELETE FROM events WHERE created_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-30 day')")]);}
 };

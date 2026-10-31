@@ -1,0 +1,21 @@
+{
+  "checked_at": "2026-10-31T09:54:22.847Z",
+  "origin": "https://karate-growth-ai.karate-growth-ai.workers.dev",
+  "bot": "https://t.me/BudoTallinnGrowthBot",
+  "mode": "live",
+  "checks": {
+    "welcomeKeyboardReceived": true,
+    "interestButtonWorks": true,
+    "consentButtonWorks": true,
+    "personalQuestionsOnlyAfterConsent": true,
+    "crmProtected": true,
+    "demoApiDisabled": true,
+    "syntheticDataHidden": true,
+    "webhookHealthy": true
+  },
+  "publicContact": {
+    "name": "Цветков Александр Александрович",
+    "telegram": "https://t.me/Alex_monte999",
+    "phone": "+37258174946"
+  }
+}

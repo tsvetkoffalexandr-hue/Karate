@@ -1,0 +1,21 @@
+{
+  "checked_at": "2026-10-31T10:00:12.153Z",
+  "mode": "live",
+  "notifications": {
+    "enabled": true,
+    "lastDelivered": "2026-10-31T09:59:25.621Z",
+    "verifiedWithOwnSyntheticLead": true,
+    "crmLinkRemoved": true,
+    "coachHeader": "Для тренера"
+  },
+  "analytics": {
+    "enabled": true,
+    "intervalMinutes": 5,
+    "lastRun": "2026-10-31T10:00:05.192Z"
+  },
+  "publishing": {
+    "enabled": false,
+    "reason": "No permitted channels configured"
+  },
+  "tests": 9
+}
