@@ -1,4 +1,5 @@
 import {transition,copy,keyboardFor} from './flow.mjs';
+import {discover,draft,permit,queuePost,publishDue,growthState,tickGrowth,track,registerChannel} from './growth.mjs';
 const json=(v,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const q=(env,sql,...args)=>env.DB.prepare(sql).bind(...args);
 async function authorized(req,env) {
@@ -91,6 +92,19 @@ export default {
  }
  if(path.startsWith('/api/')){
  if(!await authorized(req,env))return json({error:'unauthorized'},401);
+ if(path==='/api/growth'&&req.method==='GET')return json(await growthState(env));
+ if(path.startsWith('/api/growth/')&&req.method==='POST'){
+ const body=await req.json();try{
+ if(path==='/api/growth/discover')return json(await discover(env,{manual:true}));
+ if(path==='/api/growth/track')return json(await track(env,body));
+ if(path==='/api/growth/register')return json(await registerChannel(env,body));
+ if(path==='/api/growth/draft')return json(await draft(env,body));
+ if(path==='/api/growth/permit')return json(await permit(env,body));
+ if(path==='/api/growth/queue')return json(await queuePost(env,body));
+ if(path==='/api/growth/publish')return json(await publishDue(env));
+ if(path==='/api/growth/disable'){await q(env,'UPDATE growth_channels SET enabled=0 WHERE id=?',body.channelId).run();return json({ok:true});}
+ }catch(e){return json({error:e.message},400);}
+ }
  if(path==='/api/agents/run'&&req.method==='POST'){
  const body=await req.json();if(body.agent!=='analytics')return json({error:'unknown_agent'},400);return json({ok:true,stats:await runAnalytics(env)});
  }
@@ -136,5 +150,5 @@ export default {
  const r=await env.ASSETS.fetch(req);const h=new Headers(r.headers);h.set('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");h.set('Referrer-Policy','no-referrer');h.set('X-Content-Type-Options','nosniff');return new Response(r.body,{status:r.status,headers:h});
  }catch{return json({error:'request_failed'},500);}
  },
- async scheduled(_,env){await flush(env);await runAnalytics(env);await env.DB.batch([q(env,"DELETE FROM outbox WHERE sent_at IS NOT NULL AND sent_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-7 day')"),q(env,"DELETE FROM updates WHERE created_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-7 day') AND id NOT IN(SELECT update_id FROM outbox)"),q(env,"DELETE FROM events WHERE created_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-30 day')")]);}
+ async scheduled(_,env){await flush(env);await runAnalytics(env);if(env.GROWTH_ENABLED==='true')await tickGrowth(env);await env.DB.batch([q(env,"DELETE FROM outbox WHERE sent_at IS NOT NULL AND sent_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-7 day')"),q(env,"DELETE FROM updates WHERE created_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-7 day') AND id NOT IN(SELECT update_id FROM outbox)"),q(env,"DELETE FROM events WHERE created_at<strftime('%Y-%m-%dT%H:%M:%fZ','now','-30 day')")]);}
 };

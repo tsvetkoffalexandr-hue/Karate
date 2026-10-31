@@ -1,0 +1,79 @@
+{
+  "checkedAt": "2026-10-31T10:13:03.012Z",
+  "channels": [
+    {
+      "id": "let_s_family",
+      "title": "Let’s family | Estonia | дети, прогулки, Таллинн",
+      "score": 100,
+      "enabled": 0,
+      "url": "https://t.me/let_s_family"
+    },
+    {
+      "id": "tallin4",
+      "title": "Таллин Эстония Чат Барахолка Объявления",
+      "score": 40,
+      "enabled": 0,
+      "url": "https://t.me/tallin4"
+    },
+    {
+      "id": "tallin_estoniya",
+      "title": "Таллинн Эстония объявления недвижимость барахолка работа",
+      "score": 40,
+      "enabled": 0,
+      "url": "https://t.me/tallin_estoniya"
+    },
+    {
+      "id": "tallin_chatik",
+      "title": "Таллинн чат | Эстония",
+      "score": 40,
+      "enabled": 0,
+      "url": "https://t.me/tallin_chatik"
+    },
+    {
+      "id": "estonia_ukraine",
+      "title": "Украинцы в Эстонии - ЧАТ (Таллин, Нарва, Тарту, Пярну) | Українці в Естонії - Эстония 🇪🇪🇺🇦",
+      "score": 40,
+      "enabled": 0,
+      "url": "https://t.me/estonia_ukraine"
+    },
+    {
+      "id": "tallinn_chat1",
+      "title": "Чат Что там в Таллине?",
+      "score": 40,
+      "enabled": 0,
+      "url": "https://t.me/tallinn_chat1"
+    },
+    {
+      "id": "tallinn_ctvt",
+      "title": "Что там в Таллинне?🇪🇪",
+      "score": 40,
+      "enabled": 0,
+      "url": "https://t.me/tallinn_ctvt"
+    },
+    {
+      "id": "lasnachat",
+      "title": "🌃 Ласна-чат 🌇 Estonia-Tallinn-Lasnamäe",
+      "score": 40,
+      "enabled": 0,
+      "url": "https://t.me/lasnachat"
+    },
+    {
+      "id": "lasnamaa",
+      "title": "🌇Новости Ласнамяэ🌃 Estonia, Tallinn, Lasnamae",
+      "score": 40,
+      "enabled": 0,
+      "url": "https://t.me/lasnamaa"
+    }
+  ],
+  "drafts": 7,
+  "published": 0,
+  "runs": [
+    {
+      "agent": "discovery",
+      "started_at": "2026-10-31T10:13:00.253Z",
+      "finished_at": "2026-10-31T10:13:01.941Z",
+      "status": "done",
+      "detail": "{\"checked\":20,\"matched\":9,\"directoryOk\":false}"
+    }
+  ]
+}
