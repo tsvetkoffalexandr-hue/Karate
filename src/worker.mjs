@@ -1,3 +1,4 @@
+import {reportAgent,monitorState} from './monitor.mjs';
 import {transition,copy,keyboardFor} from './flow.mjs';
 import {discover,draft,permit,queuePost,publishDue,growthState,tickGrowth,track,registerChannel} from './growth.mjs';
 const json=(v,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
@@ -92,6 +93,8 @@ export default {
  }
  if(path.startsWith('/api/')){
  if(!await authorized(req,env))return json({error:'unauthorized'},401);
+ if(path==='/api/agent-monitor'&&req.method==='GET')return json(await monitorState(env));
+ if(path==='/api/agent-monitor'&&req.method==='POST'){try{return json(await reportAgent(env,await req.json()));}catch(e){return json({error:e.message},400);}}
  if(path==='/api/growth'&&req.method==='GET')return json(await growthState(env));
  if(path.startsWith('/api/growth/')&&req.method==='POST'){
  const body=await req.json();try{

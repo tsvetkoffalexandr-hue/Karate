@@ -3,3 +3,5 @@
 .authenticated #login label,.authenticated #login button:not(#logout){display:none}#signedIn{font-size:13px;color:#254e43}#showTest{display:inline-block;margin:0 6px 0 0;width:auto}
 
 #growth{margin:32px 0}.growth-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.growth-grid p{font-size:13px;line-height:1.6;overflow-wrap:anywhere}.growth-grid button{margin:6px 6px 6px 0;font-size:12px}.growth-grid textarea{width:100%;min-height:250px;padding:12px;font:inherit;font-size:14px;border:1px solid #cad3c5;border-radius:6px}.post-copy{white-space:pre-wrap}#growthError{color:#725626}@media(max-width:850px){.growth-grid{grid-template-columns:1fr}}
+
+#promotionMonitor{margin-bottom:24px;border:2px solid #718b59}#promotionStatus{padding:9px;background:#edf1e4;border-radius:6px}#promotionBlocker{color:#975026}.monitor-counts{display:flex;gap:12px;flex-wrap:wrap}.monitor-counts span{padding:10px;background:#f0f3eb;border-radius:6px}#promotionTiming{font-size:12px;line-height:1.8;color:#61705c}#promotionStatus[data-status="stale"],#promotionStatus[data-status="blocked"],#promotionStatus[data-status="error"]{background:#fff0db}

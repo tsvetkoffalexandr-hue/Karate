@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS agent_monitor (id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'not_started', action TEXT, blocker TEXT, run_id TEXT, last_seen TEXT, last_started TEXT, last_finished TEXT, interval_minutes INTEGER NOT NULL DEFAULT 5, schedule_enabled INTEGER NOT NULL DEFAULT 1, ends_at TEXT NOT NULL DEFAULT '2026-11-14T10:14:00.000Z', configured_at TEXT);
+INSERT OR IGNORE INTO agent_monitor(id) VALUES('promotion');
