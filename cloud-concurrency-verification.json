@@ -1,0 +1,14 @@
+{
+  "checked_at": "2026-10-31T09:16:21.962Z",
+  "origin": "https://karate-growth-ai.karate-growth-ai.workers.dev",
+  "concurrent_assignment_statuses": [
+    200,
+    409
+  ],
+  "checks": {
+    "one_place_one_booking": true,
+    "duplicate_update_ignored": true,
+    "crm_requires_admin": true,
+    "webhook_requires_secret": true
+  }
+}

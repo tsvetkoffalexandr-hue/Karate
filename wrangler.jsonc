@@ -4,13 +4,14 @@
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "public",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "run_worker_first": true
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "karate-growth-ai",
-      "database_id": "REPLACE_AFTER_DATABASE_CREATION",
+      "database_id": "0e633a35-f826-4133-816e-d447d5dbc4c4",
       "migrations_dir": "migrations"
     }
   ],
@@ -24,9 +25,10 @@
   },
   "vars": {
     "DEMO_MODE": "true",
-    "AI_ENABLED": "false",
-    "AI_MODEL": "@cf/meta/llama-3.1-8b-instruct",
+    "AI_ENABLED": "true",
+    "AI_MODEL": "@cf/qwen/qwen3-30b-a3b-fp8",
     "CLUB_NAME": "Karate klub Budo",
-    "CLUB_FACTS": "Karate klub Budo. Адрес: Keldrimäe tn 9, Tallinn. Дети от 3 лет. Первые 2 тренировки бесплатно. Сначала собираем интерес родителей, затем тренер распределяет желающих по времени. Постоянные цены и расписание ещё не указаны. Не придумывай их."
-  }
+    "CLUB_FACTS": "Karate klub Budo. Адрес: Keldrimäe tn 9, Tallinn. Дети от 3 лет. Первые 2 тренировки бесплатно. Сначала собираем интерес родителей, затем тренер распределяет желающих по времени. Постоянные цены и расписание ещё не указаны. Не придумывай их. Принимаем новичков и детей с опытом. По сведениям владельца: занятия ведёт квалифицированный тренер и спортсмен с педагогическим образованием и многолетним опытом работы с детьми. На занятиях уделяется внимание технике, физическому развитию и дисциплине. Не обещать гарантированных результатов."
+  },
+  "account_id": "0560388f8a2397b0b62b949beeb224af"
 }

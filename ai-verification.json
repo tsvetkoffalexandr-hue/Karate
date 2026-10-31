@@ -1,0 +1,17 @@
+{
+  "checked_at": "2026-10-31T09:15:56.962Z",
+  "origin": "https://karate-growth-ai.karate-growth-ai.workers.dev",
+  "model": "@cf/qwen/qwen3-30b-a3b-fp8",
+  "answers": [
+    {
+      "language": "ru",
+      "question": "Сколько бесплатных тренировок и где клуб?",
+      "answer": "[TEST] Первые 2 тренировки бесплатные. Адрес клуба: Keldrimäe tn 9, Tallinn."
+    },
+    {
+      "language": "uk",
+      "question": "Скільки безкоштовних тренувань та де клуб?",
+      "answer": "[TEST] У клубі Karate Budo перші 2 тренування безкоштовні. Адреса: Keldrimäe tn 9, Талін."
+    }
+  ]
+}

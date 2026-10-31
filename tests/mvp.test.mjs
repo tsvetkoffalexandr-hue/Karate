@@ -20,7 +20,7 @@ test('RU and UK: consent, valid parent contact, booking, CRM, deletion',async()=
  for(const language of ['ru','uk']){
  const f=fixture();await f.request('/api/slots',{id:'trial',label:'TEST',starts_at:new Date(Date.now()+86400000).toISOString(),capacity:1});
  await f.qualify(1,language);assert.equal(f.db.prepare('SELECT status FROM leads').get().status,'awaiting_assignment');let r=await f.request('/api/assign',{leadId:'demo:1',slotId:'trial'});assert.equal(r.status,200);assert.match((await r.json()).message,/Keldrimäe tn 9/);
- const state=await(await f.request('/api/state')).json();assert.equal(state.stats.booked,1);assert.equal(state.leads[0].language,language);assert.equal(state.slots.length,0);
+ const state=await(await f.request('/api/state')).json();assert.equal(state.stats.booked,1);assert.match((await f.send('/slots')).reply,language==='uk'?/призначено/:/назначено/);assert.equal(state.leads[0].language,language);assert.equal(state.slots.length,0);
  await f.send('/delete');assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM leads').get().n,0);assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM bookings').get().n,0);
  assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM outbox WHERE payload LIKE '%parent_test%'").get().n,0);
  }
