@@ -1,0 +1,23 @@
+{
+  "checked_at": "2026-10-31T09:50:44.053Z",
+  "bot": "https://t.me/BudoTallinnGrowthBot",
+  "webhook": "https://karate-growth-ai.karate-growth-ai.workers.dev/telegram",
+  "mode": "test",
+  "ownerOnly": true,
+  "pendingUpdates": 0,
+  "webhookError": null,
+  "commandsConfigured": true,
+  "descriptionConfigured": true,
+  "realDialogueVerified": true,
+  "checks": {
+    "realTelegramIntake": true,
+    "interestConfirmedBeforeAssignment": true,
+    "crmSaved": true,
+    "trainerAssignment": true,
+    "notificationVisibleInTelegram": true,
+    "aiReplyRussian": true,
+    "aiReplyUkrainian": true,
+    "deliveryQueueEmpty": true
+  },
+  "testData": "synthetic; no parent applications collected"
+}

@@ -84,7 +84,7 @@ export default {
  const events=(await q(env,'SELECT * FROM events ORDER BY id DESC LIMIT 50').all()).results;
  const stats=await q(env,"SELECT COUNT(*) AS leads,SUM(status='awaiting_assignment') AS qualified,SUM(interested=1) AS interested,SUM(status='booked') AS booked FROM leads").first();
  const queue=await q(env,'SELECT COUNT(*) AS pending,SUM(attempts>=8) AS failed FROM outbox WHERE sent_at IS NULL').first();
- return json({leads,events,stats,queue,slots:await slots(env),mode:env.DEMO_MODE,ai:env.AI_ENABLED==='true'?'enabled':'disabled'});
+ return json({leads,events,stats,queue,slots:await slots(env),mode:env.DEMO_MODE,telegramConfigured:!!env.TELEGRAM_BOT_TOKEN,ai:env.AI_ENABLED==='true'?'enabled':'disabled'});
  }
  if(path==='/api/demo'&&req.method==='POST'){
  if(env.DEMO_MODE!=='true')return json({error:'disabled'},403);
