@@ -1,0 +1,6 @@
+ALTER TABLE leads ADD COLUMN interested INTEGER;
+ALTER TABLE leads ADD COLUMN preferred_times TEXT;
+CREATE TABLE outbox_new (id INTEGER PRIMARY KEY AUTOINCREMENT, update_id INTEGER UNIQUE REFERENCES updates(id), chat_id TEXT NOT NULL, payload TEXT NOT NULL, sent_at TEXT, attempts INTEGER NOT NULL DEFAULT 0);
+INSERT INTO outbox_new SELECT * FROM outbox;
+DROP TABLE outbox;
+ALTER TABLE outbox_new RENAME TO outbox;
